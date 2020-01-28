@@ -8,10 +8,7 @@ let imageSize = {
     width: 640,
     height: 480
 };
-// let scaledImageSize = {
-//     width: 640,
-//     height: 480
-// };
+
 let scaleSize = {
     x: 1.0,
     y: 1.0
@@ -33,17 +30,6 @@ let resnetConfigParams = {
 
 let poseNet;
 let poses = [];
-
-let partsOfDisp = ["nose","leftWrist","rightWrist","leftAnkle","rightAnkle"];
-let recordPosNum = 5;
-let position = {
-    x:0.0,
-    y:0.0
-}
-let recordNosePos = [];
-let recordWristPos = [];
-let recordAnklePos = [];
-let dispFlag = true;
 
 let partsInfo = [];
 let partInfo = {
@@ -84,20 +70,8 @@ function setup() {
 }
 
 function setupCamera() {
-    //【memo】captureinput: USB_Camera (0458:708c) id = e2310dc0ade15f8036395bdf981b6bff07cb78360efee005876718a03de6088d
-    var options = {
-        capture: {
-          optional: [{
-            sourceId: 'e2310dc0ade15f8036395bdf981b6bff07cb78360efee005876718a03de6088d' //'put_desired_source_id_here'
-          }]
-        }
-      };
     capture = createCapture(VIDEO, cameraLoaded);
-    // capture = createCapture(options);
-
     capture.size(imageSize.width, imageSize.height);
-
-    // Hide the capture element, and just show the canvas
     capture.hide();
 }
 
@@ -108,7 +82,7 @@ function cameraLoaded(){
 function setupPosenet(){
     posenet.load(modelConfigParams).then(function(loadedNet) {
         net = loadedNet;
-        // when it's loaded, start estimating poses
+        
         requestAnimationFrame(function() {
             estimatePoses();
         });
@@ -116,7 +90,6 @@ function setupPosenet(){
 }
 
 function estimatePoses(){
-    // call posenet to estimate a pose
     net.estimateMultiplePoses(capture.elt, {
         flipHorizontal: true,
         maxDetections: 10,
@@ -124,9 +97,8 @@ function estimatePoses(){
         nmsRadius: 20
     })
     .then(function(estimatedPoses) {
-        // store the poses to draw them below
         poses = estimatedPoses;
-        // next animation loop, call posenet again to estimate poses
+        
         requestAnimationFrame(function() {
             estimatePoses();
         });
@@ -147,16 +119,12 @@ function draw() {
 
 function drawLineEffect(){
     fill(255,255,255,50);
-    //for (let i = 0; i < poses.length; i++) {
+
     if (poses.length>0) {
         let pose = poses[0];
 
         // get position
         for (let point of pose.keypoints) {
-            // console.log("partsInfo-len:",partsInfo.length)
-            // console.log("partsInfo:",partsInfo)
-            // console.log("partsInfo[0]:",partsInfo[0].x)
-            // console.log("partsInfo[1]:",partsInfo[1].x)
             if(point.part == "nose"){
                 if(point.score > 0.5){
                     partsInfo[0].x = point.position.x*scaleSize.x;
@@ -200,8 +168,7 @@ function drawLineEffect(){
             }
         }
 
-        // draw
-        let count=0;
+        // draw line
         for(let j=1;j<partsInfo.length;j++){
             if(partsInfo[j-1].enable && partsInfo[j].enable){
                 stroke(255, 255, 255, 200);
@@ -214,7 +181,7 @@ function drawLineEffect(){
             strokeWeight(1);
             line(partsInfo[partsInfo.length-1].x, partsInfo[partsInfo.length-1].y, partsInfo[0].x, partsInfo[0].y);
         }
-        //多角形
+        // draw polygon
         fill(255,255,255,70);
         beginShape();
         for(let j=0;j<partsInfo.length;j++){
@@ -228,10 +195,6 @@ function drawLineEffect(){
 
 function windowResized() {
     resizeCanvas(windowWidth, windowHeight);
-
-    // scaleSize = windowHeight/imageSize.height;
-    // scaledImageSize.width = imageSize.width*scaleSize
-    // scaledImageSize.height = imageSize.height*scaleSize
 
     scaleSize.x = windowWidth/imageSize.width;
     scaleSize.y = windowHeight/imageSize.height;
